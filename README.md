@@ -273,8 +273,8 @@ docker-compose logs -f db
 ```bash
 # Сборка и запуск контейнера
 docker-compose up --build -d
-
+```
 ## 📝 Лицензия
-
+```
 UNLICENSED
 ```
