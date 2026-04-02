@@ -1,5 +1,6 @@
 import { RefreshToken } from '@auth/entities/refresh-token.entity'
 import { Role } from '@auth/enums/role.enum'
+import { Movie } from 'src/movies/enitites/movie.entity'
 import {
   Column,
   CreateDateColumn,
@@ -58,4 +59,7 @@ export class User {
 
   @OneToMany(() => RefreshToken, (token) => token.user)
   refreshTokens: RefreshToken[]
+
+  @OneToMany(() => Movie, (movie) => movie.user)
+  movies: Movie[]
 }

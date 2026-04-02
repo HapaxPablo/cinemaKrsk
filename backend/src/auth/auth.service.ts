@@ -55,7 +55,10 @@ export class AuthService {
   async verifyEmail(dto: VerifyEmailDto) {
     const user = await this.usersRepository.findOneBy({ email: dto.email })
     if (!user) throw new BadRequestException('Пользователь не найден')
-    if (user.isVerified) throw new BadRequestException('Email уже подтверждён')
+
+    //так как по дефолту стоит false, то мы явно проверяем на false, а не на !user.isVerified
+    if (user.isVerified === false)
+      throw new BadRequestException('Email уже подтверждён')
 
     if (
       user.verificationCode !== dto.code ||
@@ -77,8 +80,12 @@ export class AuthService {
     const user = await this.usersRepository.findOneBy({ email: dto.email })
     if (!user || !user.passwordHash)
       throw new UnauthorizedException('Неверный email или пароль')
-    if (!user.isVerified)
+
+    if (user.isVerified === false) {
+      //так как у нас по дефолту стоит false, то мы явно проверяем на false, а не на !user.isVerified
+      console.log('Попытка входа с неподтверждённым email:', dto.email)
       throw new UnauthorizedException('Email не подтверждён')
+    }
 
     const isMatch = await bcrypt.compare(dto.password, user.passwordHash)
     if (!isMatch) throw new UnauthorizedException('Неверный email или пароль')
