@@ -6,6 +6,11 @@ import { UsersModule } from '@users/users.module'
 import { PrometheusModule } from '@willsoto/nestjs-prometheus'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
+import { FilesModule } from './files/files.module';
+import { MoviesModule } from './movies/movies.module';
+import { ActorsModule } from './actors/actors.module';
+import { GenresModule } from './genres/genres.module';
+import { RatingModule } from './rating/rating.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -27,6 +32,11 @@ import { AppService } from './app.service'
     AuthModule,
     UsersModule,
     MailModule,
+    FilesModule,
+    MoviesModule,
+    ActorsModule,
+    GenresModule,
+    RatingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
