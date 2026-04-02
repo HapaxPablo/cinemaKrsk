@@ -1,280 +1,307 @@
-# Cinema KRSK – Fullstack приложения для управления кинотеатром
+# Cinema KRSK – Fullstack приложение онлайн кинотеатра
 
-Полнофункциональный бэкенд-сервис для управления кинотеатром, разработанный на **NestJS** с использованием **PostgreSQL**, аутентификацией через JWT и мониторингом производительности.
+Полнофункциональный бэкенд для онлайн кинотеатра, разработанный на **NestJS** с использованием **PostgreSQL**, JWT-аутентификацией, системой ролей и мониторингом производительности.
 
 ## 📋 Содержание
 
 - [Особенности](#особенности)
 - [Технологический стек](#технологический-стек)
 - [Требования](#требования)
-- [Установка](#установка)
-- [Запуск](#запуск)
+- [Установка и запуск](#установка-и-запуск)
 - [Окружение](#окружение)
 - [API](#api)
+- [Роли и доступ](#роли-и-доступ)
 - [Мониторинг](#мониторинг)
-- [Разработка](#разработка)
-- [Тестирование](#тестирование)
+- [Структура проекта](#структура-проекта)
 
 ## ✨ Особенности
 
-- **Аутентификация**: JWT-токены с использованием Passport.js
-- **Безопасность**: Хеширование пароля через bcrypt
-- **База данных**: PostgreSQL с ORM TypeORM
-- **Валидация**: class-validator и class-transformer для валидации DTO
-- **Email**: Интеграция с Resend для отправки уведомлений
-- **Мониторинг**: Prometheus + Grafana для отслеживания метрик
-- **Админ-панель**: pgAdmin для управления БД
-- **Docker**: Полная контейнеризация через Docker Compose
+- **Аутентификация**: JWT (Access + Refresh токены) через Passport.js
+- **Регистрация**: по email с подтверждением кода + через Telegram
+- **Роли**: `guest`, `user`, `superuser` с разграничением доступа
+- **Безопасность**: хеширование паролей через bcrypt, бан пользователей
+- **База данных**: PostgreSQL + TypeORM с автосинхронизацией схемы
+- **Email**: отправка кодов подтверждения через Yandex SMTP (Nodemailer)
+- **Документация API**: Swagger (`/api/docs`)
+- **Мониторинг**: Prometheus + Grafana + Node Exporter + Postgres Exporter
+- **Docker**: полная контейнеризация через Docker Compose
 
 ## 🛠 Технологический стек
 
 ### Backend
 
-- **NestJS** 11.x – фреймворк для Node.js
-- **TypeScript** – типизированный язык программирования
-- **PostgreSQL** 17 – система управления БД
-- **TypeORM** – ORM для работы с БД
-- **Passport.js** + **JWT** – аутентификация
-- **bcrypt** – хеширование паролей
+- **NestJS** 11.x — фреймворк для Node.js
+- **TypeScript** — типизированный язык программирования
+- **PostgreSQL** 17 — СУБД
+- **TypeORM** — ORM для работы с БД
+- **Passport.js** + **JWT** — аутентификация
+- **bcrypt** — хеширование паролей
+- **Nodemailer** — отправка email
+- **Swagger** (`@nestjs/swagger`) — документация API
 
-### Мониторинг и логирование
+### Мониторинг
 
-- **Prometheus** – сбор метрик
-- **Grafana** – визуализация метрик
-- **Node Exporter** – метрики сервера
-- **Postgres Exporter** – метрики БД
+- **Prometheus** — сбор метрик
+- **Grafana** — визуализация метрик
+- **Node Exporter** — метрики сервера (CPU, RAM, диск)
+- **Postgres Exporter** — метрики БД
+- **prom-client** — метрики NestJS приложения (HTTP latency, heap, GC)
 
 ### Разработка
 
-- **ESLint** – линтер кода
-- **Prettier** – форматирование кода
-- **Jest** – фреймворк для тестирования
-- **Docker & Docker Compose** – контейнеризация
+- **ESLint** + **Prettier** — линтинг и форматирование
+- **Jest** — тестирование
+- **Docker & Docker Compose** — контейнеризация
 
 ## 📋 Требования
 
-- **Docker** и **Docker Compose** (версия 1.29+)
-- **Node.js** 18+ (для локальной разработки без Docker)
-- **npm** или **yarn**
+- **Docker** и **Docker Compose**
+- **Node.js** 22+ (для локальной разработки без Docker)
 
-## 🚀 Установка
+## 🚀 Установка и запуск
 
-### Способ 1: С использованием Docker (рекомендуется)
+### С использованием Docker (рекомендуется)
 
 ```bash
-# Клонирование репозитория
 git clone <repository-url>
 cd cinema
 
-# Запуск всех сервисов через Docker Compose
-docker-compose up -d
+# Создать .env файл (см. раздел Окружение)
+cp .env.example .env
+
+# Запуск всех сервисов
+docker compose up -d
 ```
 
-Сервисы будут запущены на следующих портах:
+Сервисы будут доступны по адресам:
 
-- Backend: `http://localhost:3001`
-- Grafana: `http://localhost:3002`
-- Prometheus: `http://localhost:9090`
-- pgAdmin: `http://localhost:5050`
+| Сервис               | Адрес                                           |
+| -------------------- | ----------------------------------------------- |
+| Backend API          | `http://localhost:3001`                         |
+| Swagger документация | `http://localhost:3001/api/docs`                |
+| Grafana              | `http://localhost:6000` (или по `GRAFANA_PORT`) |
+| Prometheus           | `http://localhost:9090`                         |
+| pgAdmin              | `http://localhost:5050`                         |
 
-### Способ 2: Локальная разработка
+### Локальная разработка
 
 ```bash
-# Установка зависимостей
 cd backend
 npm install
 
-# Настройка переменных окружения
-cp .env.example .env
-
-# Запуск базы данных через Docker
-docker-compose up -d db pgadmin postgres_exporter node_exporter prometheus grafana
+# Запуск только инфраструктуры
+docker compose up -d db pgadmin prometheus grafana postgres_exporter node_exporter
 
 # Запуск приложения
 npm run start:dev
 ```
 
-## ⚙️ Запуск
-
-### Начало работы
+### Команды
 
 ```bash
-# Развертывание всех сервисов
-docker-compose up -d
-
-# Просмотр логов приложения
-docker-compose logs -f backend
-
-# Остановка сервисов
-docker-compose down
+npm run start:dev      # режим разработки с hot reload
+npm run start:debug    # режим отладки
+npm run build          # сборка
+npm run start:prod     # production запуск
+npm run lint           # линтинг
+npm run test           # тесты
+npm run test:cov       # тесты с покрытием
 ```
 
-### Команды разработки
+## ⚙️ Окружение
 
-```bash
-# Запуск в режиме разработки (с hot reload)
-npm run start:dev
-
-# Запуск в режиме отладки
-npm run start:debug
-
-# Сборка для production
-npm run build
-
-# Запуск production версии
-npm run start:prod
-```
-
-## 🔐 Окружение
-
-Файл `.env` содержит следующие переменные:
+Файл `.env` должен находиться в корне проекта (`/cinema/.env`):
 
 ```env
 # База данных
-DB_HOST=localhost
+DB_HOST=db
 DB_PORT=5432
-DB_USERNAME=your_db_username
-DB_PASSWORD=your_db_password
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
 DB_NAME=cinema
 
 # Приложение
 PORT=3001
 
+# JWT
+JWT_ACCESS_SECRET=your_secret_min_32_chars
+
+# Email (Yandex SMTP)
+MAIL_FROM=your_email@yandex.ru
+YANDEX_APP_PASSWORD=your_app_password
+
+# Telegram Bot
+TELEGRAM_BOT_TOKEN=your_bot_token
+
 # Мониторинг
-GRAFANA_PORT=3002
+GRAFANA_PORT=6000
 GRAFANA_USERNAME=admin
 GRAFANA_PASSWORD=your_grafana_password
 PROMETHEUS_PORT=9090
 
-# Admin panel
+# pgAdmin
 PGADMIN_EMAIL=admin@example.com
 PGADMIN_PASSWORD=your_pgadmin_password
 PGADMIN_PORT=5050
-
-# Интеграции
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token
-RESEND_API_KEY=your_resend_api_key
-MAIL_FROM=noreply@example.com
 ```
 
-> ⚠️ **Важно**: Не коммитьте `.env` файл с реальными credentials в git. Используйте `.env.example`. Все чувствительные данные должны устанавливаться локально или через переменные окружения в CI/CD.
+> ⚠️ Не коммитьте `.env` с реальными данными. Используйте `.env.example` как шаблон.
+
+> ⚠️ `GRAFANA_PORT=6000` не работает в Chrome (зарезервированный порт). Используйте другой порт, например `3002`, или открывайте в Firefox.
 
 ## 📡 API
 
-API доступен по адресу `http://localhost:3001`
+Полная документация доступна через Swagger: `http://localhost:3001/api/docs`
 
-### Основные модули
+### Аутентификация (`/auth`)
 
-- **Auth** (`/auth`) – аутентификация и авторизация
-- **Users** (`/users`) – управление пользователями
-- **Mail** (`/mail`) – отправка уведомлений
+| Метод | Эндпоинт                 | Описание                             | Доступ |
+| ----- | ------------------------ | ------------------------------------ | ------ |
+| POST  | `/auth/register`         | Регистрация по email                 | Все    |
+| POST  | `/auth/verify-email`     | Подтверждение email кодом            | Все    |
+| POST  | `/auth/login`            | Вход по email + пароль               | Все    |
+| POST  | `/auth/refresh`          | Обновление access токена             | Все    |
+| POST  | `/auth/logout`           | Выход (отзыв refresh токена)         | Все    |
+| POST  | `/auth/complete-profile` | Заполнение профиля после регистрации | USER+  |
+| POST  | `/auth/telegram`         | Авторизация через Telegram           | Все    |
 
-### Примеры запросов
+### Пользователи (`/users`)
+
+| Метод  | Эндпоинт     | Описание                  | Доступ    |
+| ------ | ------------ | ------------------------- | --------- |
+| GET    | `/users/me`  | Свой профиль              | USER+     |
+| PATCH  | `/users/me`  | Обновить свой профиль     | USER+     |
+| GET    | `/users`     | Список всех пользователей | SUPERUSER |
+| GET    | `/users/:id` | Профиль по ID             | SUPERUSER |
+| POST   | `/users`     | Создать пользователя      | SUPERUSER |
+| PATCH  | `/users/:id` | Обновить пользователя     | SUPERUSER |
+| DELETE | `/users/:id` | Удалить пользователя      | SUPERUSER |
+
+### Жанры (`/genres`)
+
+| Метод  | Эндпоинт      | Описание           | Доступ    |
+| ------ | ------------- | ------------------ | --------- |
+| GET    | `/genres`     | Список всех жанров | Все       |
+| GET    | `/genres/:id` | Жанр по ID         | Все       |
+| POST   | `/genres`     | Создать жанр       | SUPERUSER |
+| PATCH  | `/genres/:id` | Обновить жанр      | SUPERUSER |
+| DELETE | `/genres/:id` | Удалить жанр       | SUPERUSER |
+
+### Передача токена
 
 ```bash
-# Регистрация
-curl -X POST http://localhost:3001/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"password123"}'
-
-# Логин
-curl -X POST http://localhost:3001/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"password123"}'
-
-# Получение данных пользователя (требует JWT токен)
-curl -X GET http://localhost:3001/users/profile \
-  -H "Authorization: Bearer <token>"
+# В заголовке запроса
+Authorization: Bearer <accessToken>
 ```
 
-Полная документация API будет доступна через Swagger.
+## 🔐 Роли и доступ
 
-## 🎨 Frontend
+| Роль        | Описание                                                                            |
+| ----------- | ----------------------------------------------------------------------------------- |
+| `guest`     | Неавторизованный пользователь — доступ только к публичным эндпоинтам                |
+| `user`      | Авторизованный пользователь — полный доступ к контенту, управление своим профилем   |
+| `superuser` | Администратор — все возможности user + управление пользователями, контентом, банами |
 
-Frontend приложение (в разработке) будет расположено в директории `/frontend` и создано с использованием современного фреймворка (NextJs).
-
-### Планируемые возможности Frontend
-
-### Структура Frontend
-
-Frontend будет взаимодействовать с Backend API через REST запросы.
+Роль по умолчанию при регистрации — `user`. Изменить роль может только `superuser`.
 
 ## 📊 Мониторинг
 
 ### Grafana
 
-- **URL**: `http://localhost:3002`
-- **Login**: `zabor`
-- **Password**: `zabor21n!@`
+- **URL**: `http://localhost:6000` (порт задаётся через `GRAFANA_PORT`)
+- Логин/пароль из `.env` (`GRAFANA_USERNAME` / `GRAFANA_PASSWORD`)
 
-В Grafana можно просматривать:
+**Дашборды** — импортировать в Grafana → Dashboards → Import по ID:
 
-- Метрики приложения (CPU, память, запросы)
-- Метрики PostgreSQL (размер БД, количество соединений)
-- Метрики сервера
+| Дашборд                    | ID                                 |
+| -------------------------- | ---------------------------------- |
+| PostgreSQL                 | `9628`                             |
+| Node (сервер)              | `1860`                             |
+| Cinema Backend (кастомный) | загрузить `grafana-dashboard.json` |
 
 ### Prometheus
 
 - **URL**: `http://localhost:9090`
-
-Можно запросить метрики напрямую через PromQL.
+- Собирает метрики с backend (`/metrics`), postgres_exporter, node_exporter
 
 ### pgAdmin
 
 - **URL**: `http://localhost:5050`
-- **Email**: `admin@cinema.com`
-- **Password**: `zabor21n!@`
+- Email/пароль из `.env` (`PGADMIN_EMAIL` / `PGADMIN_PASSWORD`)
 
-Управление БД, выполнение SQL-запросов, просмотр схемы.
-
-## 👨‍💻 Разработка
-
-### Структура проекта
+## 👨‍💻 Структура проекта
 
 ```
 cinema/
-├── backend/               # Backend приложение (NestJS)
-│   ├── src/
-│   │   ├── auth/          # Модуль аутентификации
-│   │   ├── users/         # Модуль управления пользователями
-│   │   ├── mail/          # Модуль отправки email
-│   │   ├── common/        # Общие утилиты и guards
-│   │   ├── app.module.ts  # Главный модуль приложения
-│   │   └── main.ts        # Точка входа
-│   ├── test/              # E2E тесты
-│   ├── package.json
-│   └── Dockerfile
-├── frontend/              # Frontend приложение (React/Vue/Angular)
-│   ├── src/               # Исходный код
-│   ├── public/            # Статические файлы
-│   └── package.json
-├── monitoring/            # Конфигурация мониторинга
-│   ├── prometheus.yml     # Конфигурация Prometheus
-│   └── grafana/           # Графики и дашборды Grafana
-├── docker-compose.yml     # Оркестрация контейнеров
-└── README.md              # Данный файл
+├── docker-compose.yml
+├── .env
+├── monitoring/
+│   ├── prometheus.yml
+│   └── grafana/
+│       └── provisioning/
+│           └── datasources/
+│               └── prometheus.yml
+└── backend/
+    ├── Dockerfile
+    ├── package.json
+    ├── tsconfig.json
+    ├── nest-cli.json
+    ├── eslint.config.mjs
+    ├── .prettierrc
+    └── src/
+        ├── main.ts
+        ├── app.module.ts
+        ├── auth/
+        │   ├── decorators/        # @CurrentUser, @Roles
+        │   ├── dto/               # RegisterDto, LoginDto, ...
+        │   ├── entities/          # RefreshToken
+        │   ├── enums/             # Role
+        │   ├── guards/            # JwtAuthGuard, RolesGuard
+        │   ├── strategies/        # JwtStrategy
+        │   ├── auth.controller.ts
+        │   ├── auth.service.ts
+        │   └── auth.module.ts
+        ├── users/
+        │   ├── dto/               # CreateUserDto, UpdateUserDto
+        │   ├── entities/          # User
+        │   ├── users.controller.ts
+        │   ├── users.service.ts
+        │   └── users.module.ts
+        ├── genres/
+        │   ├── dto/               # CreateGenreDto, UpdateGenreDto
+        │   ├── entities/          # Genre
+        │   ├── genres.controller.ts
+        │   ├── genres.service.ts
+        │   └── genres.module.ts
+        ├── movies/
+        │   └── entities/          # Movie
+        ├── mail/
+        │   ├── mail.service.ts
+        │   └── mail.module.ts
+        └── common/
+            └── interceptors/
+                └── http-metrics.interceptor.ts
 ```
 
 ## 🐛 Отладка
 
-### Просмотр логов Docker контейнеров
-
 ```bash
 # Логи всех сервисов
-docker-compose logs -f
+docker compose logs -f
 
 # Логи конкретного сервиса
-docker-compose logs -f backend
-docker-compose logs -f db
+docker compose logs -f backend
+docker compose logs -f db
+
+# Статус контейнеров
+docker compose ps
+
+# Пересборка бэкенда
+docker compose up --build backend
 ```
 
-## 📦 Production Deploy
-
-```bash
-# Сборка и запуск контейнера
-docker-compose up --build -d
-```
 ## 📝 Лицензия
+
 ```
 UNLICENSED
 ```
